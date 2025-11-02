@@ -85,7 +85,7 @@ def read_sensor():
         except Exception as e:
             print(f"Error inesperado: {e}")
         
-        time.sleep(30.0)  # Guardar cada 5 segundos
+        time.sleep(30.0)  # Guardar cada 30 segundos
 
 # Inicializar BD
 init_db()
@@ -111,7 +111,7 @@ def get_current():
 @app.route('/api/history')
 def get_history():
     """API: Histórico de datos"""
-    readings = get_recent_readings(500)
+    readings = get_recent_readings(2500)
     
     timestamps = [r[0] for r in readings]
     temperatures = [r[1] for r in readings]
@@ -127,7 +127,7 @@ def get_history():
 @app.route('/api/stats')
 def get_stats():
     """API: Estadísticas"""
-    readings = get_recent_readings(1000)  # Últimas 1000 lecturas
+    readings = get_recent_readings(2500)  # Últimas lecturas
     
     if not readings:
         return jsonify({'error': 'No hay datos'})
@@ -150,6 +150,29 @@ def get_stats():
         },
         'total_readings': len(readings)
     })
+    
+@app.route('/api/total_count')
+def get_total_count():
+    """API: Total de registros en la base de datos"""
+    try:
+        conn = sqlite3.connect('sensor_data.db')
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) FROM readings")
+        total = c.fetchone()[0]
+        
+        # Obtener fecha del primer y último registro
+        c.execute("SELECT MIN(timestamp), MAX(timestamp) FROM readings")
+        first, last = c.fetchone()
+        
+        conn.close()
+        
+        return jsonify({
+            'total_readings': total,
+            'first_reading': first,
+            'last_reading': last
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500    
 
 @app.route('/download/csv')
 def download_csv():

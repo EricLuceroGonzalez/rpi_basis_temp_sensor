@@ -367,8 +367,13 @@
                             `Min: ${data.temperature.min.toFixed(1)}°C | Max: ${data.temperature.max.toFixed(1)}°C | Avg: ${data.temperature.avg.toFixed(1)}°C`;
                         document.getElementById('humidityRange').textContent = 
                             `Min: ${data.humidity.min.toFixed(1)}% | Max: ${data.humidity.max.toFixed(1)}% | Avg: ${data.humidity.avg.toFixed(1)}%`;
-                        document.getElementById('totalReadings').textContent = data.total_readings.toLocaleString();
                     }
+                });
+                // Total count real
+            fetch('/api/total_count')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalReadings').textContent = data.total_readings.toLocaleString();
                 });
         }
         
