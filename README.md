@@ -163,7 +163,7 @@ screen -X -S dht11 quit
 sudo apt-get install python3-dev
 ```
 
-### Sensor siempre marca 20°C
+### Sensor siempre marca lo mismo
 
 - Verifica las conexiones
 - Prueba otro pin GPIO
@@ -233,8 +233,8 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 ## 👤 Autor
 
 **Tu Nombre**
-- GitHub: [@tu-usuario](https://github.com/tu-usuario)
-- Email: tu-email@ejemplo.com
+- GitHub: [@ericlucerogonzalez](https://github.com/ericlucerogonzalez)
+- Email: ericlucerogonzalez@gmail.com
 
 ## 🙏 Agradecimientos
 
