@@ -47,7 +47,7 @@ def save_reading(temp, humidity):
     except Exception as e:
         print(f"Error guardando en BD: {e}")
 
-def get_recent_readings(limit=100):
+def get_recent_readings(limit=500):
     """Obtener últimas N lecturas"""
     try:
         conn = sqlite3.connect('sensor_data.db')
@@ -111,7 +111,7 @@ def get_current():
 @app.route('/api/history')
 def get_history():
     """API: Histórico de datos"""
-    readings = get_recent_readings(100)
+    readings = get_recent_readings(500)
     
     timestamps = [r[0] for r in readings]
     temperatures = [r[1] for r in readings]
