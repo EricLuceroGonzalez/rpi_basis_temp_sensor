@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor DHT11 - Plotly</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .stat-title {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-icon {
+            font-size: 1.5em;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-value.temp { color: #ff6b6b; }
+        .stat-value.humidity { color: #4ecdc4; }
+        .stat-value.neutral { color: #95a5a6; }
+        
+        .stat-subtitle {
+            font-size: 0.85em;
+            color: #999;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #4ecdc4;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #45b8b0;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
+        }
+        
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #ee5a52;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #e8f5e9;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #2e7d32;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        
+        .info-text {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌡️ Monitor de Temperatura y Humedad</h1>
+            <p>Sistema de monitoreo en tiempo real con DHT11</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Temperatura Actual</span>
+                    <span class="stat-icon">🌡️</span>
+                </div>
+                <div class="stat-value temp" id="currentTemp">--</div>
+                <div class="stat-subtitle" id="tempRange">Min: -- | Max: --</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Humedad Actual</span>
+                    <span class="stat-icon">💧</span>
+                </div>
+                <div class="stat-value humidity" id="currentHumidity">--</div>
+                <div class="stat-subtitle" id="humidityRange">Min: -- | Max: --</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Lecturas Guardadas</span>
+                    <span class="stat-icon">📊</span>
+                </div>
+                <div class="stat-value neutral" id="totalReadings">0</div>
+                <div class="stat-subtitle">
+                    <span class="status-indicator">
+                        <span class="status-dot"></span>
+                        En línea
+                    </span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Última Actualización</span>
+                    <span class="stat-icon">🕐</span>
+                </div>
+                <div class="stat-value neutral" style="font-size: 1.2em;" id="lastUpdate">--:--:--</div>
+                <div class="stat-subtitle" id="timestamp">Esperando datos...</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="tempChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="humidityChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="combinedChart"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="updateAll()">🔄 Actualizar Ahora</button>
+            <a href="/download/csv" class="btn btn-success">📥 Descargar CSV</a>
+            <button class="btn btn-danger" onclick="clearData()">🗑️ Limpiar Datos</button>
+            <div class="info-text">
+                <small>Los datos se actualizan automáticamente cada 5 segundos</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tempChart, humidityChart, combinedChart;
+        
+        // Configuración común de gráficos
+        const commonLayout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(250,250,250,0.5)',
+            font: { family: 'Segoe UI, sans-serif', size: 12 },
+            margin: { t: 50, r: 30, l: 50, b: 50 },
+            hovermode: 'x unified'
+        };
+        
+        const config = {
+            responsive: true,
+            displayModeBar: true,
+            displaylogo: false,
+            modeBarButtonsToRemove: ['lasso2d', 'select2d']
+        };
+        
+        // Inicializar gráficos
+        function initCharts() {
+            // Gráfico de temperatura
+            const tempTrace = {
+                x: [],
+                y: [],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Temperatura',
+                line: { color: '#ff6b6b', width: 3 },
+                marker: { size: 6 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(255, 107, 107, 0.2)'
+            };
+            
+            Plotly.newPlot('tempChart', [tempTrace], {
+                ...commonLayout,
+                title: '📈 Temperatura en el Tiempo',
+                yaxis: { title: 'Temperatura (°C)' },
+                xaxis: { title: 'Tiempo' }
+            }, config);
+            
+            // Gráfico de humedad
+            const humidityTrace = {
+                x: [],
+                y: [],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Humedad',
+                line: { color: '#4ecdc4', width: 3 },
+                marker: { size: 6 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(78, 205, 196, 0.2)'
+            };
+            
+            Plotly.newPlot('humidityChart', [humidityTrace], {
+                ...commonLayout,
+                title: '💧 Humedad en el Tiempo',
+                yaxis: { title: 'Humedad (%)', range: [0, 100] },
+                xaxis: { title: 'Tiempo' }
+            }, config);
+            
+            // Gráfico combinado
+            const tempTrace2 = { ...tempTrace, name: 'Temperatura (°C)', yaxis: 'y' };
+            const humTrace2 = { ...humidityTrace, name: 'Humedad (%)', yaxis: 'y2' };
+            
+            Plotly.newPlot('combinedChart', [tempTrace2, humTrace2], {
+                ...commonLayout,
+                title: '📊 Vista Combinada',
+                xaxis: { title: 'Tiempo' },
+                yaxis: { title: 'Temperatura (°C)', titlefont: { color: '#ff6b6b' } },
+                yaxis2: {
+                    title: 'Humedad (%)',
+                    titlefont: { color: '#4ecdc4' },
+                    overlaying: 'y',
+                    side: 'right',
+                    range: [0, 100]
+                }
+            }, config);
+        }
+        
+        // Actualizar datos actuales
+        function updateCurrent() {
+            fetch('/api/current')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.temperature !== null) {
+                        document.getElementById('currentTemp').textContent = data.temperature.toFixed(1) + '°C';
+                        document.getElementById('currentHumidity').textContent = data.humidity.toFixed(1) + '%';
+                        
+                        const time = new Date(data.timestamp);
+                        document.getElementById('lastUpdate').textContent = time.toLocaleTimeString();
+                        document.getElementById('timestamp').textContent = data.timestamp;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        // Actualizar estadísticas
+        function updateStats() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        document.getElementById('tempRange').textContent = 
+                            `Min: ${data.temperature.min.toFixed(1)}°C | Max: ${data.temperature.max.toFixed(1)}°C | Avg: ${data.temperature.avg.toFixed(1)}°C`;
+                        document.getElementById('humidityRange').textContent = 
+                            `Min: ${data.humidity.min.toFixed(1)}% | Max: ${data.humidity.max.toFixed(1)}% | Avg: ${data.humidity.avg.toFixed(1)}%`;
+                        document.getElementById('totalReadings').textContent = data.total_readings.toLocaleString();
+                    }
+                });
+        }
+        
+        // Actualizar gráficos
+        function updateCharts() {
+            fetch('/api/history')
+                .then(response => response.json())
+                .then(data => {
+                    const times = data.timestamps.map(ts => new Date(ts));
+                    
+                    // Actualizar gráfico de temperatura
+                    Plotly.update('tempChart', {
+                        x: [times],
+                        y: [data.temperature]
+                    }, {}, [0]);
+                    
+                    // Actualizar gráfico de humedad
+                    Plotly.update('humidityChart', {
+                        x: [times],
+                        y: [data.humidity]
+                    }, {}, [0]);
+                    
+                    // Actualizar gráfico combinado
+                    Plotly.update('combinedChart', {
+                        x: [times, times],
+                        y: [data.temperature, data.humidity]
+                    }, {}, [0, 1]);
+                });
+        }
+        
+        // Actualizar todo
+        function updateAll() {
+            updateCurrent();
+            updateStats();
+            updateCharts();
+        }
+        
+        // Limpiar datos
+        function clearData() {
+            if (confirm('¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.')) {
+                fetch('/api/clear_data')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Datos eliminados correctamente');
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    });
+            }
+        }
+        
+        // Inicializar
+        initCharts();
+        updateAll();
+        
+        // Actualizar automáticamente
+        setInterval(updateCurrent, 3000);  // Datos actuales cada 3s
+        setInterval(updateStats, 10000);   // Estadísticas cada 10s
+        setInterval(updateCharts, 5000);   // Gráficos cada 5s
+    </script>
+</body>
+</html>
