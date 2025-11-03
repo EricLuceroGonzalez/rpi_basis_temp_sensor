@@ -13,7 +13,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Configurar sensor
-dhtDevice = adafruit_dht.DHT11(board.D4)
+dhtDevice = adafruit_dht.DHT22(board.D17)
 
 # Variables globales
 current_temp = None
@@ -23,7 +23,7 @@ last_update = None
 # Inicializar base de datos
 def init_db():
     """Crear tabla si no existe"""
-    conn = sqlite3.connect('sensor_data.db')
+    conn = sqlite3.connect('dht22_data.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS readings
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +37,7 @@ def init_db():
 def save_reading(temp, humidity):
     """Guardar lectura en base de datos"""
     try:
-        conn = sqlite3.connect('sensor_data.db')
+        conn = sqlite3.connect('dht22_data.db')
         c = conn.cursor()
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         c.execute("INSERT INTO readings (timestamp, temperature, humidity) VALUES (?, ?, ?)",
@@ -50,7 +50,7 @@ def save_reading(temp, humidity):
 def get_recent_readings(limit=500):
     """Obtener últimas N lecturas"""
     try:
-        conn = sqlite3.connect('sensor_data.db')
+        conn = sqlite3.connect('dht22_data.db')
         c = conn.cursor()
         c.execute("SELECT timestamp, temperature, humidity FROM readings ORDER BY id DESC LIMIT ?", (limit,))
         rows = c.fetchall()
@@ -155,7 +155,7 @@ def get_stats():
 def get_total_count():
     """API: Total de registros en la base de datos"""
     try:
-        conn = sqlite3.connect('sensor_data.db')
+        conn = sqlite3.connect('dht22_data.db')
         c = conn.cursor()
         c.execute("SELECT COUNT(*) FROM readings")
         total = c.fetchone()[0]
@@ -200,7 +200,7 @@ def download_csv():
 def clear_data():
     """Limpiar todos los datos (usar con cuidado)"""
     try:
-        conn = sqlite3.connect('sensor_data.db')
+        conn = sqlite3.connect('dht22_data.db')
         c = conn.cursor()
         c.execute("DELETE FROM readings")
         conn.commit()

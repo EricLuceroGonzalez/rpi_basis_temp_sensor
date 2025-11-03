@@ -3,7 +3,7 @@ import adafruit_dht
 import board
 import time
 
-sensor = adafruit_dht.DHT11(board.D4)
+sensor = adafruit_dht.DHT22(board.D17)
 
 print("Leyendo 20 veces...")
 for i in range(20):

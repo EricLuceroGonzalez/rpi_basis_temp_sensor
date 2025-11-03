@@ -4,7 +4,7 @@ import adafruit_dht
 
 # Inicializar el sensor DHT11 en el pin GPIO4 (pin 7 físico)
 # Cambia board.D4 por el pin que estés usando (D4, D17, D18, etc.)
-dhtDevice = adafruit_dht.DHT11(board.D4)
+dhtDevice = adafruit_dht.DHT22(board.D17)
 
 print("Probando sensor DHT11...")
 print("Presiona Ctrl+C para salir\n")
