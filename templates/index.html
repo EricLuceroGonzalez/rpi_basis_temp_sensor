@@ -3,9 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor DHT22 - Plotly</title>
+    <title>Monitor de Sensores (DHT22 + AS7341)</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
+        :root {
+            --color-violet: #9b59b6;
+            --color-indigo: #34495e;
+            --color-blue: #3498db;
+            --color-cyan: #1abc9c;
+            --color-green: #2ecc71;
+            --color-yellow: #f1c40f;
+            --color-orange: #e67e22;
+            --color-red: #e74c3c;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -101,6 +112,37 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             margin-bottom: 20px;
         }
+
+        /* --- NUEVOS ESTILOS PARA EL PANEL ESPECTRAL --- */
+        .spectral-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+        }
+        
+        .spectral-bar {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border-bottom-width: 5px;
+            border-bottom-style: solid;
+        }
+        
+        .spectral-title {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #777;
+            text-transform: uppercase;
+        }
+        
+        .spectral-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #333;
+            margin-top: 5px;
+        }
+        /* --- FIN DE NUEVOS ESTILOS --- */
         
         .controls {
             background: white;
@@ -191,8 +233,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌡️ Monitor de Temperatura y Humedad</h1>
-            <p>Sistema de monitoreo en tiempo real con DHT11</p>
+            <h1>🌡️💡 Monitor de Sensores Ambientales</h1>
+            <p>DHT22 (Temp/Hum) y AS7341 (Espectral)</p>
         </div>
         
         <div class="stats-grid">
@@ -216,16 +258,11 @@
             
             <div class="stat-card">
                 <div class="stat-header">
-                    <span class="stat-title">Lecturas Guardadas</span>
+                    <span class="stat-title">Lecturas DHT22</span>
                     <span class="stat-icon">📊</span>
                 </div>
-                <div class="stat-value neutral" id="totalReadings">0</div>
-                <div class="stat-subtitle">
-                    <span class="status-indicator">
-                        <span class="status-dot"></span>
-                        En línea
-                    </span>
-                </div>
+                <div class="stat-value neutral" id="totalDhtReadings">0</div>
+                <div class="stat-subtitle" id="totalSpectralReadings">Espectral: 0</div>
             </div>
             
             <div class="stat-card">
@@ -238,31 +275,69 @@
             </div>
         </div>
         
+        <div class="chart-container" style="padding-bottom: 30px;">
+            <h3 style="text-align: center; margin-bottom: 20px; color: #333;">💡 Panel Espectral (AS7341)</h3>
+            <div class="spectral-grid">
+                <div class="spectral-bar" style="border-color: var(--color-violet);">
+                    <div class="spectral-title">415nm (V)</div>
+                    <div class="spectral-value" id="spec-f415nm">--</div>
+                </div>
+                <div class="spectral-bar" style="border-color: var(--color-indigo);">
+                    <div class="spectral-title">445nm (I)</div>
+                    <div class="spectral-value" id="spec-f445nm">--</div>
+                </div>
+                <div class="spectral-bar" style="border-color: var(--color-blue);">
+                    <div class="spectral-title">480nm (B)</div>
+                    <div class="spectral-value" id="spec-f480nm">--</div>
+                </div>
+                <div class="spectral-bar" style="border-color: var(--color-cyan);">
+                    <div class="spectral-title">515nm (C)</div>
+                    <div class="spectral-value" id="spec-f515nm">--</div>
+                </div>
+                <div class="spectral-bar" style="border-color: var(--color-green);">
+                    <div class="spectral-title">555nm (G)</div>
+                    <div class="spectral-value" id="spec-f555nm">--</div>
+                </div>
+                <div class="spectral-bar" style="border-color: var(--color-yellow);">
+                    <div class="spectral-title">590nm (Y)</div>
+                    <div class="spectral-value" id="spec-f590nm">--</div>
+                </div>
+                <div class="spectral-bar" style="border-color: var(--color-orange);">
+                    <div class="spectral-title">630nm (O)</div>
+                    <div class="spectral-value" id="spec-f630nm">--</div>
+                </div>
+                <div class="spectral-bar" style="border-color: var(--color-red);">
+                    <div class="spectral-title">680nm (R)</div>
+                    <div class="spectral-value" id="spec-f680nm">--</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="spectralChart"></div>
+        </div>
         <div class="chart-container">
             <div id="tempChart"></div>
         </div>
-        
         <div class="chart-container">
             <div id="humidityChart"></div>
         </div>
-        
         <div class="chart-container">
             <div id="combinedChart"></div>
         </div>
         
         <div class="controls">
             <button class="btn btn-primary" onclick="updateAll()">🔄 Actualizar Ahora</button>
-            <a href="/download/csv" class="btn btn-success">📥 Descargar CSV</a>
+            <a href="/download/dht_csv" class="btn btn-success">📥 DHT CSV</a>
+            <a href="/download/spectral_csv" class="btn btn-success">📥 Espectral CSV</a>
             <button class="btn btn-danger" onclick="clearData()">🗑️ Limpiar Datos</button>
             <div class="info-text">
-                <small>Los datos se actualizan automáticamente cada 5 segundos</small>
+                <small>Los datos se actualizan automáticamente</small>
             </div>
         </div>
     </div>
 
     <script>
-        let tempChart, humidityChart, combinedChart;
-        
         // Configuración común de gráficos
         const commonLayout = {
             paper_bgcolor: 'rgba(0,0,0,0)',
@@ -283,60 +358,56 @@
         function initCharts() {
             // Gráfico de temperatura
             const tempTrace = {
-                x: [],
-                y: [],
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: 'Temperatura',
-                line: { color: '#ff6b6b', width: 3 },
-                marker: { size: 6 },
-                fill: 'tozeroy',
-                fillcolor: 'rgba(255, 107, 107, 0.2)'
+                x: [], y: [], type: 'scatter', mode: 'lines+markers',
+                name: 'Temperatura', line: { color: '#ff6b6b', width: 3 },
+                marker: { size: 6 }, fill: 'tozeroy', fillcolor: 'rgba(255, 107, 107, 0.2)'
             };
-            
             Plotly.newPlot('tempChart', [tempTrace], {
-                ...commonLayout,
-                title: '📈 Temperatura en el Tiempo',
-                yaxis: { title: 'Temperatura (°C)' },
-                xaxis: { title: 'Tiempo' }
+                ...commonLayout, title: '📈 Temperatura en el Tiempo',
+                yaxis: { title: 'Temperatura (°C)',range: [10, 20] }, xaxis: { title: 'Tiempo' }
             }, config);
             
             // Gráfico de humedad
             const humidityTrace = {
-                x: [],
-                y: [],
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: 'Humedad',
-                line: { color: '#4ecdc4', width: 3 },
-                marker: { size: 6 },
-                fill: 'tozeroy',
-                fillcolor: 'rgba(78, 205, 196, 0.2)'
+                x: [], y: [], type: 'scatter', mode: 'lines+markers',
+                name: 'Humedad', line: { color: '#4ecdc4', width: 3 },
+                marker: { size: 6 }, fill: 'tozeroy', fillcolor: 'rgba(78, 205, 196, 0.2)'
             };
-            
             Plotly.newPlot('humidityChart', [humidityTrace], {
-                ...commonLayout,
-                title: '💧 Humedad en el Tiempo',
-                yaxis: { title: 'Humedad (%)', range: [0, 100] },
-                xaxis: { title: 'Tiempo' }
+                ...commonLayout, title: '💧 Humedad en el Tiempo',
+                yaxis: { title: 'Humedad (%)', range: [20, 80] }, xaxis: { title: 'Tiempo' }
             }, config);
             
             // Gráfico combinado
             const tempTrace2 = { ...tempTrace, name: 'Temperatura (°C)', yaxis: 'y' };
             const humTrace2 = { ...humidityTrace, name: 'Humedad (%)', yaxis: 'y2' };
-            
             Plotly.newPlot('combinedChart', [tempTrace2, humTrace2], {
-                ...commonLayout,
-                title: '📊 Vista Combinada',
+                ...commonLayout, title: '📊 Vista Combinada DHT22',
                 xaxis: { title: 'Tiempo' },
                 yaxis: { title: 'Temperatura (°C)', titlefont: { color: '#ff6b6b' } },
                 yaxis2: {
-                    title: 'Humedad (%)',
-                    titlefont: { color: '#4ecdc4' },
-                    overlaying: 'y',
-                    side: 'right',
-                    range: [0, 100]
+                    title: 'Humedad (%)', titlefont: { color: '#4ecdc4' },
+                    overlaying: 'y', side: 'right', range: [0, 100]
                 }
+            }, config);
+            
+            // --- NUEVO GRÁFICO ESPECTRAL ---
+            const spectralTraces = [
+                { x: [], y: [], mode: 'lines', name: '415nm (V)', line: { color: 'var(--color-violet)' } },
+                { x: [], y: [], mode: 'lines', name: '445nm (I)', line: { color: 'var(--color-indigo)' } },
+                { x: [], y: [], mode: 'lines', name: '480nm (B)', line: { color: 'var(--color-blue)' } },
+                { x: [], y: [], mode: 'lines', name: '515nm (C)', line: { color: 'var(--color-cyan)' } },
+                { x: [], y: [], mode: 'lines', name: '555nm (G)', line: { color: 'var(--color-green)' } },
+                { x: [], y: [], mode: 'lines', name: '590nm (Y)', line: { color: 'var(--color-yellow)' } },
+                { x: [], y: [], mode: 'lines', name: '630nm (O)', line: { color: 'var(--color-orange)' } },
+                { x: [], y: [], mode: 'lines', name: '680nm (R)', line: { color: 'var(--color-red)' } }
+            ];
+            Plotly.newPlot('spectralChart', spectralTraces, {
+                ...commonLayout,
+                title: '💡 Espectro de Luz en el Tiempo (AS7341)',
+                yaxis: { title: 'Conteo (Raw)' },
+                xaxis: { title: 'Tiempo' },
+                hovermode: 'x unified'
             }, config);
         }
         
@@ -347,14 +418,29 @@
                 .then(data => {
                     if (data.temperature !== null) {
                         document.getElementById('currentTemp').textContent = data.temperature.toFixed(1) + '°C';
+                    }
+                    if (data.humidity !== null) {
                         document.getElementById('currentHumidity').textContent = data.humidity.toFixed(1) + '%';
-                        
+                    }
+                    if (data.timestamp) {
                         const time = new Date(data.timestamp);
                         document.getElementById('lastUpdate').textContent = time.toLocaleTimeString();
                         document.getElementById('timestamp').textContent = data.timestamp;
                     }
+
+                    // --- NUEVO: Actualizar panel espectral ---
+                    if (data.spectral_data) {
+                        document.getElementById('spec-f415nm').textContent = data.spectral_data.f415nm || '0';
+                        document.getElementById('spec-f445nm').textContent = data.spectral_data.f445nm || '0';
+                        document.getElementById('spec-f480nm').textContent = data.spectral_data.f480nm || '0';
+                        document.getElementById('spec-f515nm').textContent = data.spectral_data.f515nm || '0';
+                        document.getElementById('spec-f555nm').textContent = data.spectral_data.f555nm || '0';
+                        document.getElementById('spec-f590nm').textContent = data.spectral_data.f590nm || '0';
+                        document.getElementById('spec-f630nm').textContent = data.spectral_data.f630nm || '0';
+                        document.getElementById('spec-f680nm').textContent = data.spectral_data.f680nm || '0';
+                    }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => console.error('Error en /api/current:', error));
         }
         
         // Actualizar estadísticas
@@ -364,17 +450,20 @@
                 .then(data => {
                     if (!data.error) {
                         document.getElementById('tempRange').textContent = 
-                            `Min: ${data.temperature.min.toFixed(1)}°C | Max: ${data.temperature.max.toFixed(1)}°C | Avg: ${data.temperature.avg.toFixed(1)}°C`;
+                            `Min: ${data.temperature.min?.toFixed(1) ?? '--'}°C | Max: ${data.temperature.max?.toFixed(1) ?? '--'}°C | Avg: ${data.temperature.avg?.toFixed(1) ?? '--'}°C`;
                         document.getElementById('humidityRange').textContent = 
-                            `Min: ${data.humidity.min.toFixed(1)}% | Max: ${data.humidity.max.toFixed(1)}% | Avg: ${data.humidity.avg.toFixed(1)}%`;
+                            `Min: ${data.humidity.min?.toFixed(1) ?? '--'}% | Max: ${data.humidity.max?.toFixed(1) ?? '--'}% | Avg: ${data.humidity.avg?.toFixed(1) ?? '--'}%`;
+                        // Las estadísticas espectrales no se muestran en las tarjetas, pero se podrían añadir
                     }
-                });
-                // Total count real
+                }).catch(error => console.error('Error en /api/stats:', error));
+
+            // Total count real
             fetch('/api/total_count')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('totalReadings').textContent = data.total_readings.toLocaleString();
-                });
+                    document.getElementById('totalDhtReadings').textContent = data.dht_readings.total_readings.toLocaleString();
+                    document.getElementById('totalSpectralReadings').textContent = "Espectral: " + data.spectral_readings.total_readings.toLocaleString();
+                }).catch(error => console.error('Error en /api/total_count:', error));
         }
         
         // Actualizar gráficos
@@ -382,30 +471,42 @@
             fetch('/api/history')
                 .then(response => response.json())
                 .then(data => {
-                    const times = data.timestamps.map(ts => new Date(ts));
+                    // --- ACTUALIZADO: Leer datos de DHT ---
+                    const dht_times = data.dht_history.timestamps.map(ts => new Date(ts));
                     
-                    // Actualizar gráfico de temperatura
                     Plotly.update('tempChart', {
-                        x: [times],
-                        y: [data.temperature]
+                        x: [dht_times],
+                        y: [data.dht_history.temperature]
                     }, {}, [0]);
                     
-                    // Actualizar gráfico de humedad
                     Plotly.update('humidityChart', {
-                        x: [times],
-                        y: [data.humidity]
+                        x: [dht_times],
+                        y: [data.dht_history.humidity]
                     }, {}, [0]);
                     
-                    // Actualizar gráfico combinado
                     Plotly.update('combinedChart', {
-                        x: [times, times],
-                        y: [data.temperature, data.humidity]
+                        x: [dht_times, dht_times],
+                        y: [data.dht_history.temperature, data.dht_history.humidity]
                     }, {}, [0, 1]);
-                });
+
+                    // --- NUEVO: Actualizar gráfico espectral ---
+                    const spectral_times = data.spectral_history.timestamps.map(ts => new Date(ts));
+                    Plotly.update('spectralChart', {
+                        x: [spectral_times, spectral_times, spectral_times, spectral_times, 
+                            spectral_times, spectral_times, spectral_times, spectral_times],
+                        y: [
+                            data.spectral_history.f415nm, data.spectral_history.f445nm,
+                            data.spectral_history.f480nm, data.spectral_history.f515nm,
+                            data.spectral_history.f555nm, data.spectral_history.f590nm,
+                            data.spectral_history.f630nm, data.spectral_history.f680nm
+                        ]
+                    }, {}, [0, 1, 2, 3, 4, 5, 6, 7]);
+                }).catch(error => console.error('Error en /api/history:', error));
         }
         
         // Actualizar todo
         function updateAll() {
+            console.log("Actualizando todo...");
             updateCurrent();
             updateStats();
             updateCharts();
@@ -413,7 +514,7 @@
         
         // Limpiar datos
         function clearData() {
-            if (confirm('¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.')) {
+            if (confirm('¿Estás seguro de que quieres eliminar todos los datos de AMBAS tablas? Esta acción no se puede deshacer.')) {
                 fetch('/api/clear_data')
                     .then(response => response.json())
                     .then(data => {
