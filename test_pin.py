@@ -3,10 +3,15 @@ import adafruit_dht
 import board
 import time
 
-sensor = adafruit_dht.DHT22(board.D17)
+try:
+    sensor = adafruit_dht.DHT22(board.D17)
+    print("Sensor conectado en pin 17")
+except RuntimeError as e:
+    print(f"Error: {e}")
 
 print("Leyendo 20 veces...")
 for i in range(20):
+    print(f"i = {i+1}")
     try:
         temp = sensor.temperature
         humidity = sensor.humidity

@@ -146,6 +146,7 @@ def read_sensor():
                 
             except RuntimeError as error:
                 print(f"Error de lectura DHT: {error.args[0]}")
+                print(f"Error en tiempo: {timestamp}")
             except Exception as e:
                 print(f"Error inesperado DHT: {e}")
 
